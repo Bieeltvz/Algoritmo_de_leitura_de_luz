@@ -1,0 +1,42 @@
+﻿
+======================================================================
+­ƒîÉ APLICA├ç├âO DE AN├üLISE DE IMAGENS TIFF
+======================================================================
+
+­ƒô▒ Acesse a aplica├º├úo em: http://localhost:5000
+   (Aperte Ctrl+C para parar)
+
+ * Serving Flask app 'app'
+ * Debug mode: on
+
+======================================================================
+­ƒîÉ APLICA├ç├âO DE AN├üLISE DE IMAGENS TIFF
+======================================================================
+
+­ƒô▒ Acesse a aplica├º├úo em: http://localhost:5000
+   (Aperte Ctrl+C para parar)
+
+
+======================================================================
+­ƒîÉ APLICA├ç├âO DE AN├üLISE DE IMAGENS TIFF
+======================================================================
+
+­ƒô▒ Acesse a aplica├º├úo em: http://localhost:5000
+   (Aperte Ctrl+C para parar)
+
+
+======================================================================
+­ƒîÉ APLICA├ç├âO DE AN├üLISE DE IMAGENS TIFF
+======================================================================
+
+­ƒô▒ Acesse a aplica├º├úo em: http://localhost:5000
+   (Aperte Ctrl+C para parar)
+
+
+======================================================================
+­ƒîÉ APLICA├ç├âO DE AN├üLISE DE IMAGENS TIFF
+======================================================================
+
+­ƒô▒ Acesse a aplica├º├úo em: http://localhost:5000
+   (Aperte Ctrl+C para parar)
+

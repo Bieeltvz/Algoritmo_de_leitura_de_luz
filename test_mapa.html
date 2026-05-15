@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Mapa - Bombinhas recorte</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        #mapa { width: 100%; height: 100vh; background: #E8E8E8; }
+        
+        .header {
+            position: absolute;
+            top: 10px;
+            left: 50px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 400px;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .header h2 {
+            margin: 0 0 8px 0;
+            color: #222;
+            font-size: 18px;
+        }
+        
+        .header p {
+            margin: 4px 0;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .label-crescimento {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .vermelho { background-color: #FF4444; color: white; }
+        .amarelo { background-color: #FFD700; color: #333; }
+        
+        .legenda {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 1000;
+            font-size: 13px;
+        }
+        
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            margin: 6px 0;
+        }
+        
+        .legenda-cor {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="mapa"></div>
+    <div class="header">
+        <h2>Bombinhas recorte</h2>
+        <p><strong>Intensidade de Luz</strong></p>
+        <p>2014: 8.88 → 2024: 8.71</p>
+        <div class="label-crescimento amarelo">⚖️ -2.0% - ESTÁVEL</div>
+    </div>
+    
+    <div class="legenda">
+        <strong>Legenda</strong>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background-color: #FF4444;"></div>
+            <span>Crescimento (+5% ou mais)</span>
+        </div>
+        <div class="legenda-item">
+            <div class="legenda-cor" style="background-color: #FFD700;"></div>
+            <span>Estável / Variação</span>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script>
+        // Dados da cidade
+        const latitude = -27.1519159;
+        const longitude = -48.4875691;
+        const nomeCidade = "Bombinhas recorte";
+        const corPrincipal = "#FFD700";
+        const corLight = "#FFED4E";
+        
+        // Criar mapa focado APENAS na cidade
+        const mapa = L.map('mapa').setView([latitude, longitude], 12);
+        
+        // Camada base neutra (sem muitos detalhes)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap',
+            maxZoom: 19,
+            minZoom: 11,
+            className: 'mapa-base'
+        }).addTo(mapa);
+        
+        // Adicionar círculo grande colorido no centro representando a cidade inteira
+        L.circleMarker([latitude, longitude], {
+            radius: 30,
+            fillColor: corPrincipal,
+            color: '#333',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.7
+        }).addTo(mapa);
+        
+        // Desabilitar pan excessivo para manter foco na cidade
+        mapa.setMaxBounds(mapa.getBounds().pad(0.5));
+    </script>
+</body>
+</html>
