@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Índice de Documentação - Sistema de Análise de Luz Noturna</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 600px;
+        }
+        
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 1em;
+            text-transform: uppercase;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .sidebar ul {
+            list-style: none;
+        }
+        
+        .sidebar li {
+            margin: 8px 0;
+        }
+        
+        .sidebar a {
+            color: #333;
+            text-decoration: none;
+            display: block;
+            padding: 8px 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar a:hover {
+            background: #667eea;
+            color: white;
+            padding-left: 15px;
+        }
+        
+        .main {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+        
+        .section {
+            display: none;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            color: #764ba2;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .feature-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        
+        .stats-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .stats-table td {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 10px 12px;
+        }
+        
+        .stats-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        button:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+        
+        button.download {
+            background: #28a745;
+        }
+        
+        button.download:hover {
+            background: #218838;
+        }
+        
+        .pill {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .status.complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                max-height: none;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛰️ Sistema de Análise de Luz Noturna</h1>
+            <p>Documentação Completa - Versão 2.0</p>
+            <div class="status complete">✅ Documentação Completa</div>
+        </header>
+        
+        <div class="content">
+            <div class="sidebar">
+                <h3>📚 Índice</h3>
+                <ul>
+                    <li><a href="#" onclick="mostrarSecao('inicio')">📖 Início</a></li>
+                    <li><a href="#" onclick="mostrarSecao('visao')">👁️ Visão Geral</a></li>
+                    <li><a href="#" onclick="mostrarSecao('arquitetura')">🏗️ Arquitetura</a></li>
+                    <li><a href="#" onclick="mostrarSecao('funcionalidades')">✨ Funcionalidades</a></li>
+                    <li><a href="#" onclick="mostrarSecao('api')">🔌 APIs REST</a></li>
+                    <li><a href="#" onclick="mostrarSecao('web')">💻 Interface Web</a></li>
+                    <li><a href="#" onclick="mostrarSecao('componentes')">⚙️ Componentes</a></li>
+                    <li><a href="#" onclick="mostrarSecao('guias')">📚 Guias de Uso</a></li>
+                    <li><a href="#" onclick="mostrarSecao('requisitos')">🖥️ Requisitos</a></li>
+                    <li><a href="#" onclick="mostrarSecao('troubleshooting')">🔧 Troubleshooting</a></li>
+                    <li><a href="#" onclick="mostrarSecao('versoes')">📋 Versões</a></li>
+                    <li><a href="#" onclick="mostrarSecao('downloads')">⬇️ Downloads</a></li>
+                </ul>
+            </div>
+            
+            <div class="main">
+                <!-- Seção Início -->
+                <div id="inicio" class="section active">
+                    <h2>📖 Bem-vindo à Documentação</h2>
+                    <p>Aqui você encontra informações completas sobre o Sistema de Análise de Luz Noturna via Satélite, incluindo funcionalidades, guias de uso e referência técnica.</p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>📄 PDF Completo</h4>
+                            <p>Documentação em formato PDF profissional com todas as informações do sistema.</p>
+                            <button onclick="window.open('DOCUMENTACAO_COMPLETA.pdf')">Abrir PDF</button>
+                        </div>
+                        <div class="feature-card">
+                            <h4>📝 Markdown</h4>
+                            <p>Versão em Markdown para edição e integração em outros sistemas.</p>
+                            <button onclick="abrirArquivo('DOCUMENTACAO_COMPLETA.md')">Ver Markdown</button>
+                        </div>
+                        <div class="feature-card">
+                            <h4>📊 Sumário</h4>
+                            <p>Sumário executivo com visão geral de todos os conteúdos.</p>
+                            <button onclick="abrirArquivo('SUMARIO_DOCUMENTACAO.md')">Ver Sumário</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção Visão Geral -->
+                <div id="visao" class="section">
+                    <h2>👁️ Visão Geral do Sistema</h2>
+                    <p>Sistema completo de análise de iluminação noturna urbana utilizando imagens de satélite TIFF.</p>
+                    
+                    <h3>Características Principais</h3>
+                    <div class="info-box">
+                        ✅ Análise de 1200+ imagens de satélite<br>
+                        ✅ Processamento paralelo de 8-10x mais rápido<br>
+                        ✅ Cobertura de 60+ cidades<br>
+                        ✅ Histórico de 10 anos (2014-2024)<br>
+                        ✅ Interface web moderna e responsiva<br>
+                        ✅ Detecção automática de crescimento de luz<br>
+                        ✅ Geração de gráficos e tendências<br>
+                        ✅ API REST completa<br>
+                        ✅ Sistema de cache inteligente<br>
+                        ✅ Automação por agendador de tarefas<br>
+                        ✅ Sugestão automática de thresholds
+                    </div>
+                </div>
+                
+                <!-- Seção Arquitetura -->
+                <div id="arquitetura" class="section">
+                    <h2>🏗️ Arquitetura do Sistema</h2>
+                    <p>O sistema é dividido em 3 camadas principais:</p>
+                    
+                    <h3>1️⃣ Interface Web (Flask)</h3>
+                    <p>Aplicação Flask moderna com Bootstrap 5 e Leaflet.js para visualização geográfica.</p>
+                    
+                    <h3>2️⃣ Camada de Processamento</h3>
+                    <p>Módulos Python especializados em análise de imagens, processamento paralelo e tendências.</p>
+                    
+                    <h3>3️⃣ Armazenamento de Dados</h3>
+                    <p>Dados em formato CSV e cache JSON para performance otimizada.</p>
+                </div>
+                
+                <!-- Seção Funcionalidades -->
+                <div id="funcionalidades" class="section">
+                    <h2>✨ Funcionalidades Principais</h2>
+                    
+                    <h3>Interface Web Interativa</h3>
+                    <div class="info-box">
+                        🗺️ Mapa interativo das cidades<br>
+                        📂 Seletor de cidades/recortes<br>
+                        📊 Visualização de imagens por ano<br>
+                        🔍 Análise individual de TIFF<br>
+                        📈 Comparação entre períodos<br>
+                        💾 Upload de arquivos<br>
+                        🎯 Painel de sugestão de thresholds
+                    </div>
+                    
+                    <h3>Processamento de Imagens</h3>
+                    <span class="pill">Validação de Pixels</span>
+                    <span class="pill">Detecção de Outliers</span>
+                    <span class="pill">Estatísticas</span>
+                    
+                    <h3>Análise de Tendências</h3>
+                    <span class="pill">10 Anos de Dados</span>
+                    <span class="pill">Regressão Linear</span>
+                    <span class="pill">Gráficos</span>
+                </div>
+                
+                <!-- Seção APIs -->
+                <div id="api" class="section">
+                    <h2>🔌 APIs REST</h2>
+                    <p>O sistema oferece 8 endpoints REST para integração com outros sistemas:</p>
+                    
+                    <table class="stats-table">
+                        <tr>
+                            <th>Método</th>
+                            <th>Endpoint</th>
+                            <th>Descrição</th>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td>/api/listar-imagens</td>
+                            <td>Lista todas as imagens disponíveis</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td>/api/analisar</td>
+                            <td>Analisa arquivo TIFF selecionado</td>
+                        </tr>
+                        <tr>
+                            <td>POST</td>
+                            <td>/api/comparar-crescimento</td>
+                            <td>Compara crescimento entre dois arquivos</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td>/api/sugerir-thresholds</td>
+                            <td>Sugestão de thresholds</td>
+                        </tr>
+                        <tr>
+                            <td>GET</td>
+                            <td>/api/pastas-cidades</td>
+                            <td>Lista cidades disponíveis</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <!-- Seção Web -->
+                <div id="web" class="section">
+                    <h2>💻 Interface Web</h2>
+                    <h3>Tecnologias Utilizadas</h3>
+                    <div class="info-box">
+                        🎨 Bootstrap 5.3.0<br>
+                        🗺️ Leaflet.js 1.9.4<br>
+                        📊 Plotly.js<br>
+                        🎯 Vanilla JavaScript ES6<br>
+                        🛠️ Bootstrap Icons
+                    </div>
+                    
+                    <h3>Componentes Principais</h3>
+                    <span class="pill">Mapa Interativo</span>
+                    <span class="pill">Seletor Cidades</span>
+                    <span class="pill">Listagem Imagens</span>
+                    <span class="pill">Análise Individual</span>
+                    <span class="pill">Comparação</span>
+                    <span class="pill">Thresholds</span>
+                    <span class="pill">Upload</span>
+                </div>
+                
+                <!-- Seção Componentes -->
+                <div id="componentes" class="section">
+                    <h2>⚙️ Componentes Técnicos</h2>
+                    <p>O sistema é composto por 6 módulos Python principais:</p>
+                    
+                    <h3>1. leitura_de_luz.py</h3>
+                    <p><strong>AnalisadorLuzSatelite</strong> - Análise de imagens TIFF</p>
+                    
+                    <h3>2. processador_paralelo.py</h3>
+                    <p><strong>ProcessadorParalelo</strong> - Processamento multi-thread</p>
+                    
+                    <h3>3. tendencias.py</h3>
+                    <p><strong>AnalisadorTendencias</strong> - Análise e gráficos</p>
+                    
+                    <h3>4. sugestores_threshold.py</h3>
+                    <p><strong>SugestorThreshold</strong> - Sugestão inteligente de limiares</p>
+                    
+                    <h3>5. app.py</h3>
+                    <p><strong>Flask App</strong> - Servidor web e API REST</p>
+                    
+                    <h3>6. main.py</h3>
+                    <p><strong>Menu CLI</strong> - Interface de linha de comando</p>
+                </div>
+                
+                <!-- Seção Guias -->
+                <div id="guias" class="section">
+                    <h2>📚 Guias de Uso</h2>
+                    
+                    <h3>Instalação Rápida</h3>
+                    <div class="info-box">
+                        1. Clonar/baixar o projeto<br>
+                        2. Criar ambiente virtual<br>
+                        3. Instalar dependências<br>
+                        4. Iniciar servidor<br>
+                        5. Acessar em http://localhost:5000
+                    </div>
+                    
+                    <h3>Primeiro Processamento</h3>
+                    <p>Tempo estimado: 5-10 minutos para 120 imagens</p>
+                    
+                    <h3>Análise de Tendências</h3>
+                    <p>Gerar gráficos de crescimento de 10 anos</p>
+                    
+                    <h3>Sugestão de Thresholds</h3>
+                    <p>4 níveis: Conservador, Moderado, Agressivo, Alto Crescimento</p>
+                </div>
+                
+                <!-- Seção Requisitos -->
+                <div id="requisitos" class="section">
+                    <h2>🖥️ Requisitos Técnicos</h2>
+                    
+                    <h3>Dependências Python</h3>
+                    <div class="info-box">
+                        Flask, NumPy, Rasterio, Matplotlib, Pillow, Schedule
+                    </div>
+                    
+                    <h3>Hardware Recomendado</h3>
+                    <table class="stats-table">
+                        <tr>
+                            <th>Componente</th>
+                            <th>Mínimo</th>
+                            <th>Recomendado</th>
+                        </tr>
+                        <tr>
+                            <td>CPU</td>
+                            <td>4 cores</td>
+                            <td>8 cores</td>
+                        </tr>
+                        <tr>
+                            <td>RAM</td>
+                            <td>8 GB</td>
+                            <td>16 GB</td>
+                        </tr>
+                        <tr>
+                            <td>Disco</td>
+                            <td>10 GB</td>
+                            <td>20 GB</td>
+                        </tr>
+                    </table>
+                    
+                    <h3>Sistemas Operacionais</h3>
+                    <span class="pill">Windows 10/11</span>
+                    <span class="pill">Linux</span>
+                    <span class="pill">macOS</span>
+                </div>
+                
+                <!-- Seção Troubleshooting -->
+                <div id="troubleshooting" class="section">
+                    <h2>🔧 Troubleshooting</h2>
+                    
+                    <h3>❌ "Nenhuma pasta encontrada"</h3>
+                    <p>✅ Verificar se as imagens estão em C:\Users\{usuario}\Documents\</p>
+                    
+                    <h3>❌ "Erro ao analisar TIFF"</h3>
+                    <p>✅ Verificar se arquivo é GeoTIFF válido com gdalinfo</p>
+                    
+                    <h3>❌ "Processamento muito lento"</h3>
+                    <p>✅ Aumentar limite de threads de 4 para 8</p>
+                    
+                    <h3>❌ "Porta 5000 já em uso"</h3>
+                    <p>✅ Executar em porta diferente: python app.py --port 5001</p>
+                </div>
+                
+                <!-- Seção Versões -->
+                <div id="versoes" class="section">
+                    <h2>📋 Histórico de Versões</h2>
+                    
+                    <h3>v2.0 - Maio 2026 (ATUAL)</h3>
+                    <div class="info-box">
+                        ✅ Sugestão automática de thresholds<br>
+                        ✅ Sistema de 4 níveis de sugestão<br>
+                        ✅ Exemplos de imagens variadas<br>
+                        ✅ Interface web melhorada<br>
+                        ✅ Documentação completa
+                    </div>
+                    
+                    <h3>v1.5 - Março 2026</h3>
+                    <p>Comparação de crescimento, análise de tendências, processamento paralelo</p>
+                    
+                    <h3>v1.0 - Janeiro 2026</h3>
+                    <p>Análise básica de imagens, interface web inicial, API REST</p>
+                </div>
+                
+                <!-- Seção Downloads -->
+                <div id="downloads" class="section">
+                    <h2>⬇️ Downloads e Arquivos</h2>
+                    
+                    <h3>Documentação Gerada</h3>
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>📄 PDF Completo</h4>
+                            <p>DOCUMENTACAO_COMPLETA.pdf (24 KB)</p>
+                            <p style="font-size: 0.9em; color: #666;">Documentação profissional com todas as informações</p>
+                            <button class="download" onclick="window.open('DOCUMENTACAO_COMPLETA.pdf')">Baixar PDF</button>
+                        </div>
+                        <div class="feature-card">
+                            <h4>📝 Markdown</h4>
+                            <p>DOCUMENTACAO_COMPLETA.md (60+ KB)</p>
+                            <p style="font-size: 0.9em; color: #666;">Versão em Markdown para edição</p>
+                            <button class="download" onclick="abrirArquivo('DOCUMENTACAO_COMPLETA.md')">Ver Markdown</button>
+                        </div>
+                        <div class="feature-card">
+                            <h4>📊 Sumário</h4>
+                            <p>SUMARIO_DOCUMENTACAO.md</p>
+                            <p style="font-size: 0.9em; color: #666;">Sumário executivo com visão geral</p>
+                            <button class="download" onclick="abrirArquivo('SUMARIO_DOCUMENTACAO.md')">Ver Sumário</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>📚 Documentação gerada em 13/05/2026 | Versão 2.0 | Status: ✅ Completo e Atualizado</p>
+            <p>Sistema de Análise de Luz Noturna via Satélite | Desenvolvido com ❤️ para análise de crescimento urbano</p>
+        </footer>
+    </div>
+    
+    <script>
+        function mostrarSecao(id) {
+            // Ocultar todas as seções
+            const secoes = document.querySelectorAll('.section');
+            secoes.forEach(sec => sec.classList.remove('active'));
+            
+            // Mostrar seção selecionada
+            const secao = document.getElementById(id);
+            if (secao) {
+                secao.classList.add('active');
+            }
+            
+            // Scroll para o topo
+            document.querySelector('.main').scrollTop = 0;
+        }
+        
+        function abrirArquivo(arquivo) {
+            // Abrir arquivo em nova aba ou fazer download
+            const link = document.createElement('a');
+            link.href = arquivo;
+            link.target = '_blank';
+            link.click();
+        }
+        
+        // Mostrar seção inicial ao carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarSecao('inicio');
+        });
+    </script>
+</body>
+</html>

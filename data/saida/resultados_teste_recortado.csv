@@ -1,0 +1,13 @@
+arquivo,caminho_completo,ano,mes,intensidade_media,mediana,desvio,percentual_valido,threshold_crescimento,pixels_nulos,pixels_nodata,pixels_outliers,total_pixels,total_com_dados
+Blumenau_2023_01_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_01_Mandatoryan.tif,2023,1,8.47,1.98,14.15,50.41,15.54,2414,0,0,4880,4880
+Blumenau_2023_02_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_02_Mandatoryan.tif,2023,2,8.48,2.0,14.6,51.35,15.78,2368,0,0,4880,4880
+Blumenau_2023_04_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_04_Mandatoryan.tif,2023,4,8.37,2.15,13.78,51.43,15.26,2364,0,0,4880,4880
+Blumenau_2023_06_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_06_Mandatoryan.tif,2023,6,8.94,2.0,15.39,51.43,16.63,2364,0,0,4880,4880
+Blumenau_2023_08_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_08_Mandatoryan.tif,2023,8,7.88,2.0,12.45,51.43,14.1,2364,0,0,4880,4880
+Blumenau_2023_03_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_03_Mandatoryan.tif,2023,3,8.22,2.0,14.57,51.29,15.5,2368,0,0,4880,4880
+Blumenau_2023_07_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_07_Mandatoryan.tif,2023,7,9.0,2.2,14.99,51.43,16.49,2364,0,0,4880,4880
+Blumenau_2023_05_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_05_Mandatoryan.tif,2023,5,9.01,2.15,15.28,51.43,16.65,2364,0,0,4880,4880
+Blumenau_2023_10_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_10_Mandatoryan.tif,2023,10,11.61,10.7,8.84,16.0,16.03,2379,0,0,4880,4880
+Blumenau_2023_11_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_11_Mandatoryan.tif,2023,11,8.55,2.4,14.2,51.43,15.65,2364,0,0,4880,4880
+Blumenau_2023_09_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_09_Mandatoryan.tif,2023,9,8.33,2.05,13.86,51.39,15.26,2366,0,0,4880,4880
+Blumenau_2023_12_Mandatoryan.tif,C:\Users\gtvargas\Documents\blumenau_noturno\RASTER\teste_recortado\Blumenau_2023_12_Mandatoryan.tif,2023,12,7.96,2.1,13.24,51.15,14.58,2378,0,0,4880,4880

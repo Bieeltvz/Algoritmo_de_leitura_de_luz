@@ -32,6 +32,13 @@ import time
 # Diretório do projeto
 PROJECT_DIR = Path(__file__).parent
 
+# Setup: Adiciona src/ ao path para importar módulos da nova estrutura
+sys.path.insert(0, str(PROJECT_DIR / 'src' / 'processamento'))
+sys.path.insert(0, str(PROJECT_DIR / 'src' / 'mapas'))
+sys.path.insert(0, str(PROJECT_DIR / 'src' / 'analise'))
+sys.path.insert(0, str(PROJECT_DIR / 'src' / 'utils'))
+sys.path.insert(0, str(PROJECT_DIR / 'src'))
+
 
 def limpar_tela():
     """Limpa a tela do console"""

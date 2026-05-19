@@ -1,3 +1,39 @@
-flask==3.0.0
-rasterio==1.3.9
-numpy==1.24.3
+# Dependências do Projeto: Algoritmo de Leitura de Luz de Satélite
+# Instalar com: pip install -r requirements.txt
+
+# === Processamento de Imagens ===
+rasterio==1.3.9           # Leitura de GeoTIFF
+pillow>=9.0               # Processamento de imagens (PIL)
+numpy==1.24.3             # Computação numérica
+scipy>=1.7                # Funções científicas
+
+# === Manipulação de Dados ===
+pandas>=1.3               # DataFrames e CSV
+openpyxl>=3.6             # Leitura/escrita Excel
+
+# === Interface Web ===
+flask==3.0.0              # Framework web
+werkzeug>=2.0             # WSGI utilities
+
+# === Mapas e Visualização ===
+folium>=0.12              # Mapas interativos (Leaflet)
+plotly>=5.0               # Gráficos interativos
+matplotlib>=3.3           # Gráficos estáticos
+seaborn>=0.11             # Estilo para matplotlib
+
+# === Requisições HTTP ===
+requests>=2.25            # Cliente HTTP
+urllib3>=1.26             # URL library
+
+# === Utilitários ===
+python-dotenv>=0.19       # Variáveis de ambiente
+tqdm>=4.60                # Barras de progresso
+
+# === Opcional: Para Produção ===
+# gunicorn>=20.1          # WSGI HTTP Server (descomente para produção)
+
+# === Opcional: Para Desenvolvimento ===
+# pytest>=6.2              # Testes unitários
+# jupyter>=1.0             # Notebooks
+
+# Versões testadas: Python 3.8+

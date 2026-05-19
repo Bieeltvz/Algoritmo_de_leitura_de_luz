@@ -531,7 +531,8 @@ class MapaCrescimento:
             
             # Remover sufixos (recorte, recortado, etc.) para encontrar coordenadas
             nome_busca = nome_exibicao.lower()
-            for sufixo in ['recorte', 'recortes', 'recortado', 'reprojetado', 'noturno', 'noturna', 'reprojet']:
+            # IMPORTANTE: remover '_recortes' ANTES de '_recorte' para evitar deixar 's'
+            for sufixo in ['recortes', 'recorte', 'recortado', 'reprojetado', 'reprojet', 'noturno', 'noturna']:
                 nome_busca = nome_busca.replace(f' {sufixo}', '').replace(f'_{sufixo}', '')
             
             # Procurar a coordenada usando o nome limpo
@@ -1032,6 +1033,37 @@ class MapaCrescimento:
         
         logger.info(f"✅ Timelapse gerado para {nome_cidade}: {arquivo_saida}")
         return str(arquivo_saida)
+    
+    def _gerar_pontos_heatmap(self, arquivo_csv: str, dados_cidade: dict) -> list:
+        """Gera lista de pontos de heatmap a partir dos dados de intensidade do CSV"""
+        pontos = []
+        try:
+            with open(arquivo_csv) as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    try:
+                        ano = int(row['ano'])
+                        intensidade = float(row['intensidade_media'])
+                        
+                        # Usar coordenadas da cidade com pequeno offset para cada ano
+                        # Simula pontos na área da cidade
+                        lat = dados_cidade['lat'] + (intensidade - 0.5) * 0.001
+                        lon = dados_cidade['lon'] + (intensidade - 0.5) * 0.001
+                        
+                        # Intensidade do heatmap (0-1)
+                        peso = max(0, min(1, intensidade))
+                        
+                        pontos.append([lat, lon, peso])
+                    except (ValueError, KeyError):
+                        continue
+        except Exception as e:
+            logger.error(f"Erro ao gerar pontos de heatmap: {e}")
+            # Retornar um ponto padrão se houver erro
+            lat = dados_cidade['lat']
+            lon = dados_cidade['lon']
+            pontos = [[lat, lon, 0.5]]
+        
+        return pontos
     
     def gerar_relatorio_html_cidade(self, nome_cidade: str, arquivo_saida: str = None) -> str:
         """Gera mapa HTML recortado apenas da cidade com heatmap de crescimento colorido"""

@@ -190,11 +190,20 @@ def descobrir_pastas_cidades():
                     recorte_tipo = 'Reprojetados'
                 else:
                     # Remover sufixos e manter o nome específico
-                    recorte_tipo = recorte_dir.name.replace('_recorte', '').replace('_recortes', '').replace('_recortado', '').replace('_', ' ').strip()
+                    # IMPORTANTE: Remover '_recortes' ANTES de '_recorte' para evitar deixar 's' solto
+                    recorte_tipo = recorte_dir.name.replace('_recortes', '').replace('_recorte', '').replace('_recortado', '').replace('_', ' ').strip()
+                    # Remover palavras-chave que possam ter ficado soltas
+                    for palavra in ['recortes', 'recorte', 'recortado', 'reprojet']:
+                        recorte_tipo = recorte_tipo.replace(palavra, '').strip()
+                    recorte_tipo = ' '.join(recorte_tipo.split())  # Limpar espaços múltiplos
                     
                     # Se ficou vazio ou é igual à cidade, usar nome original formatado
                     if not recorte_tipo or recorte_tipo.lower() == cidade_nome.lower():
                         recorte_tipo = recorte_dir.name.replace('_', ' ').strip()
+                        # Remover sufixos comuns também dessa segunda passagem
+                        for palavra in ['recortes', 'recorte', 'recortado', 'reprojet', 'noturno', 'noturna']:
+                            recorte_tipo = recorte_tipo.replace(palavra, '').strip()
+                        recorte_tipo = ' '.join(recorte_tipo.split())  # Limpar espaços múltiplos
                     
                     # Se ainda assim estiver vazio, usar "Recorte"
                     if not recorte_tipo:
