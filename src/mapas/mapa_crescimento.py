@@ -45,6 +45,7 @@ class MapaCrescimento:
         Encontra o arquivo CSV da cidade procurando por variações de nome.
         
         Tenta: resultados_NomeCidade.csv, resultados_NomeCidade_recorte.csv, etc.
+        Usa mapeamento de cidades para encontrar nomes alternativos.
         
         Args:
             nome_cidade: Nome da cidade
@@ -53,6 +54,8 @@ class MapaCrescimento:
             str: Caminho do arquivo CSV se encontrado, '' caso contrário
         """
         try:
+            from difflib import SequenceMatcher
+            
             # Padrões possíveis para o arquivo CSV
             padroes = [
                 f'resultados_{nome_cidade}.csv',  # Sem sufixo
@@ -70,6 +73,7 @@ class MapaCrescimento:
                 Path(__file__).parent.parent.parent / 'data' / 'saida',  # Estrutura nova
             ]
             
+            # Tenta buscar primeiro com os padrões
             for local in locais:
                 if not local.exists():
                     continue
@@ -80,16 +84,63 @@ class MapaCrescimento:
                         logger.info(f"✅ Arquivo encontrado: {arquivo}")
                         return str(arquivo)
             
-            # Se não encontrar com padrões, procura por qualquer arquivo com parte do nome
-            logger.warning(f"Nenhum padrão exato encontrado para {nome_cidade}, procurando por padrão...")
+            # Se não encontrar, tenta carregar mapeamento de cidades
+            mapeamento_arquivo = Path(__file__).parent.parent.parent / 'data' / 'mapeamento_cidades.json'
+            if mapeamento_arquivo.exists():
+                try:
+                    with open(mapeamento_arquivo, 'r', encoding='utf-8') as f:
+                        import json
+                        mapeamento_data = json.load(f)
+                        mapeamento = mapeamento_data.get('mapeamento_cidades_arquivos', {})
+                        
+                        if nome_cidade in mapeamento:
+                            nome_alternativo = mapeamento[nome_cidade]
+                            padroes_alt = [
+                                f'resultados_{nome_alternativo}.csv',
+                                f'resultados_{nome_alternativo}_recorte.csv',
+                                f'resultados_{nome_alternativo}_RECORTADO.csv',
+                            ]
+                            
+                            for local in locais:
+                                if not local.exists():
+                                    continue
+                                for padrao_alt in padroes_alt:
+                                    arquivo = local / padrao_alt
+                                    if arquivo.exists():
+                                        logger.info(f"✅ Arquivo encontrado via mapeamento: {arquivo}")
+                                        return str(arquivo)
+                except Exception as e:
+                    logger.debug(f"Erro ao carregar mapeamento: {e}")
+            
+            # Se não encontrar com padrões, procura por fuzzy matching
+            logger.debug(f"Nenhum padrão exato encontrado para {nome_cidade}, procurando por fuzzy matching...")
+            
+            melhor_match = None
+            melhor_score = 0.0
+            
             for local in locais:
                 if not local.exists():
                     continue
                     
                 for arquivo in local.glob('resultados_*.csv'):
-                    if nome_cidade.lower() in arquivo.name.lower():
-                        logger.info(f"✅ Arquivo encontrado por padrão: {arquivo}")
-                        return str(arquivo)
+                    # Extrair o nome da cidade do nome do arquivo
+                    nome_arquivo = arquivo.stem.replace('resultados_', '').lower()
+                    
+                    # Remover sufixos comuns
+                    for sufixo in ['_recorte', '_recortes', '_recortado', '_reprojetado', '_noturno', '_noturna']:
+                        nome_arquivo = nome_arquivo.replace(sufixo, '')
+                    
+                    # Calcular similaridade
+                    ratio = SequenceMatcher(None, nome_cidade.lower(), nome_arquivo).ratio()
+                    
+                    if ratio > melhor_score:
+                        melhor_score = ratio
+                        melhor_match = arquivo
+            
+            # Se encontrou algo com score razoável (> 50%), retorna
+            if melhor_match and melhor_score > 0.5:
+                logger.info(f"✅ Arquivo encontrado por fuzzy matching (score: {melhor_score:.1%}): {melhor_match}")
+                return str(melhor_match)
             
             logger.warning(f"❌ Nenhum arquivo de resultados encontrado para {nome_cidade}")
             logger.warning(f"Locais procurados: {[str(l) for l in locais if l.exists()]}")
@@ -617,44 +668,55 @@ class MapaCrescimento:
     
     def _binarizar_imagem(self, imagem: np.ndarray) -> np.ndarray:
         """
-        Converte imagem para binário (preto e branco) usando threshold adaptativo.
+        Realça contraste e detalhes com stretching agressivo.
+        Mostra áreas com luz de forma clara e visível.
         
         Args:
             imagem: Array numpy com dados da imagem
             
         Returns:
-            np.ndarray: Imagem binarizada (0 = preto, 255 = branco)
+            np.ndarray: Imagem com contraste agressivo
         """
         try:
-            # Normalizar para 0-255 se necessário
+            # Normalizar para 0-255
             if imagem.dtype == np.float32 or imagem.dtype == np.float64:
-                valid_mask = ~np.isnan(imagem) & (imagem > 0)
+                valid_mask = ~np.isnan(imagem) & (imagem != 0)
                 if np.any(valid_mask):
                     valid_data = imagem[valid_mask]
+                    # Usar percentis extremos para máximo contraste
                     img_min = np.percentile(valid_data, 1)
                     img_max = np.percentile(valid_data, 99)
                     if img_max > img_min:
-                        imagem_norm = ((imagem - img_min) / (img_max - img_min) * 255).astype(np.uint8)
+                        imagem_norm = (imagem - img_min) / (img_max - img_min) * 255
+                        imagem_norm = np.clip(imagem_norm, 0, 255)
                     else:
-                        imagem_norm = np.zeros_like(imagem, dtype=np.uint8)
+                        imagem_norm = np.zeros_like(imagem)
                 else:
-                    imagem_norm = np.zeros_like(imagem, dtype=np.uint8)
+                    imagem_norm = np.zeros_like(imagem)
             else:
-                imagem_norm = imagem.astype(np.uint8)
+                imagem_norm = np.clip(imagem, 0, 255)
             
-            # Calcular threshold como média + desvio padrão
-            if np.any(imagem_norm > 0):
-                valid_pixels = imagem_norm[imagem_norm > 0]
-                threshold = np.mean(valid_pixels) + 0.5 * np.std(valid_pixels)
-                threshold = max(1, min(255, int(threshold)))
-            else:
-                threshold = 127
+            imagem_uint8 = imagem_norm.astype(np.uint8)
             
-            # Binarizar
-            imagem_binaria = (imagem_norm > threshold).astype(np.uint8) * 255
+            # Aplicar curva não-linear para realçar áreas com luz
+            # Usar power law (gamma correction) para intensificar luzes
+            imagem_gamma = np.power(imagem_uint8 / 255.0, 0.4) * 255
+            imagem_gamma = np.uint8(np.clip(imagem_gamma, 0, 255))
             
-            logger.debug(f"Binarização: threshold={threshold}, pixels brancos={np.sum(imagem_binaria==255)}")
-            return imagem_binaria
+            # Stretching final MUITO agressivo
+            # Separar em dark e light
+            media = np.mean(imagem_gamma[imagem_gamma > 0]) if np.any(imagem_gamma > 0) else 100
+            
+            imagem_final = np.where(imagem_gamma > media * 0.5,
+                                   np.uint8(np.clip(imagem_gamma * 2.0, 0, 255)),  # 2x mais branco
+                                   np.uint8(np.clip(imagem_gamma * 0.3, 0, 255)))   # 3x mais preto
+            
+            logger.debug(f"Contraste agressivo aplicado: gamma 0.4 + stretching 2x/3x")
+            return imagem_final
+            
+        except Exception as e:
+            logger.warning(f"Erro na normalização: {e}")
+            return np.zeros_like(imagem, dtype=np.uint8)
             
         except Exception as e:
             logger.warning(f"Erro na binarização, usando threshold 127: {e}")
@@ -703,7 +765,7 @@ class MapaCrescimento:
             logger.warning(f"Nenhuma imagem TIF encontrada em {caminho_pasta}")
             return None
         
-        # FILTRAR APENAS IMAGENS DE MÊS 12 (DEZEMBRO)
+        # FILTRAR APENAS IMAGENS DE MÊSES 12 (DEZEMBRO)
         # Padrão de nome: cidade_ano_mes.tif (ex: balneario_camboriu_2014_12.tif)
         imagens_tif = []
         for img_path in imagens_tif_todas:
@@ -753,6 +815,32 @@ class MapaCrescimento:
         
         # Converter imagens para base64 com overlay de crescimento
         imagens_base64 = []
+        
+        # ADICIONAR MAPA DE CRESCIMENTO COMO PRIMEIRA IMAGEM
+        if mapa_crescimento is not None and imagem_inicio is not None and imagem_fim is not None:
+            try:
+                logger.info("🎨 Criando imagem visual de crescimento...")
+                from PIL import Image
+                
+                # O mapa já é uint8, agora é só converter para imagem
+                crescimento_img = Image.fromarray(mapa_crescimento, mode='L')
+                crescimento_img = crescimento_img.convert('RGB')
+                crescimento_img = crescimento_img.resize((4096, 3072), Image.Resampling.LANCZOS)
+                
+                # Salvar mapa de crescimento como primeira imagem
+                buffer = BytesIO()
+                crescimento_img.save(buffer, format='PNG', optimize=False, quality=95)
+                buffer.seek(0)
+                
+                img_b64 = base64.b64encode(buffer.getvalue()).decode()
+                imagens_base64.append({
+                    'nome': '📈_CRESCIMENTO_2014-2024.png',
+                    'data': f'data:image/png;base64,{img_b64}'
+                })
+                logger.info(f"✅ Mapa de crescimento adicionado como primeira imagem (tamanho: {len(img_b64)} bytes)")
+            except Exception as e:
+                logger.warning(f"Erro ao criar mapa de crescimento visual: {e}")
+        
         try:
             logger.info(f"Total de imagens TIF encontradas: {len(imagens_tif)}")
             # Tentar usar rasterio para GeoTIFF
@@ -779,12 +867,12 @@ class MapaCrescimento:
                             # Converter para RGB para consistência com overlay
                             img = img.convert('RGB')
                             
-                            # Redimensionar para tamanho maior e melhor qualidade
-                            img = img.resize((1800, 1350), Image.Resampling.LANCZOS)
+                            # Redimensionar para Ultra HD (4K)
+                            img = img.resize((4096, 3072), Image.Resampling.LANCZOS)
                             
-                            # Converter para PNG em memória com boa qualidade
+                            # Converter para PNG em memória com máxima qualidade
                             buffer = BytesIO()
-                            img.save(buffer, format='PNG', optimize=False)
+                            img.save(buffer, format='PNG', optimize=False, quality=95)
                             buffer.seek(0)
                             
                             # Codificar em base64
@@ -848,6 +936,9 @@ class MapaCrescimento:
             return None
         
         # Dados JSON para o timelapse
+        logger.info(f"Total de imagens coletadas para timelapse: {len(imagens_base64)}")
+        
+        imagens_json = json.dumps(imagens_base64, ensure_ascii=False)
         dados_json = json.dumps({
             'cidade': dados_cidade['nome'],
             'crescimento': dados_cidade['crescimento'],
@@ -857,30 +948,25 @@ class MapaCrescimento:
             'cor_crescimento': '#FF4444' if dados_cidade['crescimento'] >= 5 else '#FFD700'
         }, ensure_ascii=False)
         
-        
-        logger.info(f"Total de imagens coletadas para timelapse: {len(imagens_base64)}")
-        
-        imagens_json = json.dumps(imagens_base64, ensure_ascii=False)
-        
-        # Criar HTML do timelapse
-        html = '''<!DOCTYPE html>
+        # Criar HTML do timelapse com encoding correto
+        html = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Timelapse - ''' + dados_cidade['nome'] + '''</title>
+    <title>Timelapse - {dados_cidade['nome']}</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; }
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; }}
         
-        .container {
+        .container {{
             display: flex;
             flex-direction: column;
             height: 100vh;
             background: #0a0a0a;
-        }
+        }}
         
-        .viewer {
+        .viewer {{
             flex: 1;
             display: flex;
             align-items: center;
@@ -888,27 +974,30 @@ class MapaCrescimento:
             position: relative;
             background: #222;
             overflow: hidden;
-        }
+        }}
         
-        .imagem-container {
+        .imagem-container {{
             position: relative;
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
+            padding: 10px;
+        }}
         
-        .imagem-container img {
-            width: 95%;
-            height: 95%;
+        .imagem-container img {{
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
             object-fit: contain;
             display: block;
-            image-rendering: high-quality;
-            filter: contrast(1.2);
-        }
+            image-rendering: crisp-edges;
+            filter: contrast(1.15);
+        }}
         
-        .overlay {
+        .overlay {{
             position: absolute;
             top: 0;
             left: 0;
@@ -916,9 +1005,9 @@ class MapaCrescimento:
             height: 100%;
             background: radial-gradient(ellipse at center, rgba(255, 100, 100, 0.3) 0%, transparent 70%);
             pointer-events: none;
-        }
+        }}
         
-        .info-panel {
+        .info-panel {{
             position: absolute;
             top: 20px;
             left: 20px;
@@ -927,37 +1016,38 @@ class MapaCrescimento:
             border-radius: 8px;
             z-index: 100;
             max-width: 300px;
-        }
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }}
         
-        .info-panel h2 { margin: 0 0 10px 0; color: #333; font-size: 16px; }
-        .info-panel p { margin: 5px 0; color: #666; font-size: 13px; }
+        .info-panel h2 {{ margin: 0 0 10px 0; color: #333; font-size: 16px; }}
+        .info-panel p {{ margin: 5px 0; color: #666; font-size: 13px; }}
         
-        .growth-label {
+        .growth-label {{
             display: inline-block;
             padding: 6px 12px;
             border-radius: 4px;
             font-weight: bold;
             margin-top: 8px;
             font-size: 12px;
-        }
+        }}
         
-        .growth-label.crescimento { background-color: #FF4444; color: white; }
-        .growth-label.estavel { background-color: #FFD700; color: #333; }
+        .growth-label.crescimento {{ background-color: #FF4444; color: white; }}
+        .growth-label.estavel {{ background-color: #FFD700; color: #333; }}
         
-        .controls {
+        .controls {{
             background: #222;
             padding: 20px;
             border-top: 1px solid #444;
-        }
+        }}
         
-        .control-group {
+        .control-group {{
             display: flex;
             gap: 10px;
             align-items: center;
             margin-bottom: 15px;
-        }
+        }}
         
-        button {
+        button {{
             background: #FF4444;
             color: white;
             border: none;
@@ -966,21 +1056,21 @@ class MapaCrescimento:
             cursor: pointer;
             font-size: 14px;
             transition: background 0.2s;
-        }
+        }}
         
-        button:hover { background: #FF6666; }
-        button:disabled { background: #888; cursor: not-allowed; }
+        button:hover {{ background: #FF6666; }}
+        button:disabled {{ background: #888; cursor: not-allowed; }}
         
-        input[type="range"] {
+        input[type="range"] {{
             flex: 1;
             height: 6px;
             border-radius: 3px;
             background: #444;
             outline: none;
             -webkit-appearance: none;
-        }
+        }}
         
-        input[type="range"]::-webkit-slider-thumb {
+        input[type="range"]::-webkit-slider-thumb {{
             -webkit-appearance: none;
             appearance: none;
             width: 16px;
@@ -988,31 +1078,31 @@ class MapaCrescimento:
             border-radius: 50%;
             background: #FF4444;
             cursor: pointer;
-        }
+        }}
         
-        input[type="range"]::-moz-range-thumb {
+        input[type="range"]::-moz-range-thumb {{
             width: 16px;
             height: 16px;
             border-radius: 50%;
             background: #FF4444;
             cursor: pointer;
             border: none;
-        }
+        }}
         
-        .tempo-display {
+        .tempo-display {{
             color: #fff;
             font-size: 14px;
             min-width: 100px;
             text-align: center;
-        }
+        }}
         
-        .legenda {
+        .legenda {{
             color: #aaa;
             font-size: 12px;
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px solid #444;
-        }
+        }}
     </style>
 </head>
 <body>
@@ -1039,15 +1129,15 @@ class MapaCrescimento:
                 <span class="tempo-display"><span id="frameAtual">1</span> / <span id="totalFrames">1</span></span>
             </div>
             <div class="legenda">
-                 <strong>Avermelhado</strong> = Crescimento de intensidade luminosa<br>
+                <strong>Avermelhado</strong> = Crescimento de intensidade luminosa<br>
                 <strong>Escala de Cinza</strong> = Intensidade luminosa original
             </div>
         </div>
     </div>
     
     <script>
-        const dados = ''' + dados_json + ''';
-        const imagens = ''' + imagens_json + ''';
+        const dados = {dados_json};
+        const imagens = {imagens_json};
         
         let indiceAtual = 0;
         let tocando = false;
@@ -1075,59 +1165,59 @@ class MapaCrescimento:
         totalFrames.textContent = imagens.length;
         sliderTempo.max = imagens.length - 1;
         
-        function mostrarFrame(indice) {
+        function mostrarFrame(indice) {{
             if (indice < 0 || indice >= imagens.length) return;
             
             indiceAtual = indice;
             const imagem = imagens[indice];
             
-            if (imagem.data !== 'placeholder') {
+            if (imagem.data !== 'placeholder') {{
                 imgPrincipal.src = imagem.data;
-            } else {
+            }} else {{
                 imgPrincipal.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="%23333"/><text x="400" y="300" fill="%23fff" text-anchor="middle" font-size="24">Imagem não disponível</text></svg>';
-            }
+            }}
             
             sliderTempo.value = indice;
             frameAtual.textContent = indice + 1;
-        }
+        }}
         
-        function play() {
+        function play() {{
             if (tocando) return;
             tocando = true;
             btnPlay.disabled = true;
             btnPause.disabled = false;
             
-            intervalo = setInterval(() => {
-                if (indiceAtual < imagens.length - 1) {
+            intervalo = setInterval(() => {{
+                if (indiceAtual < imagens.length - 1) {{
                     mostrarFrame(indiceAtual + 1);
-                } else {
+                }} else {{
                     clearInterval(intervalo);
                     tocando = false;
                     btnPlay.disabled = false;
                     btnPause.disabled = true;
-                }
-            }, 500);
-        }
+                }}
+            }}, 500);
+        }}
         
-        function pausa() {
+        function pausa() {{
             tocando = false;
             btnPlay.disabled = false;
             btnPause.disabled = true;
             if (intervalo) clearInterval(intervalo);
-        }
+        }}
         
         btnPlay.addEventListener('click', play);
         btnPause.addEventListener('click', pausa);
-        sliderTempo.addEventListener('input', (e) => {
+        sliderTempo.addEventListener('input', (e) => {{
             pausa();
             mostrarFrame(parseInt(e.target.value));
-        });
+        }});
         
         // Carregar primeiro frame
         mostrarFrame(0);
     </script>
 </body>
-</html>'''
+</html>"""
         
         with open(arquivo_saida, 'w', encoding='utf-8') as f:
             f.write(html)
@@ -1351,245 +1441,55 @@ class MapaCrescimento:
     
     def _calcular_mapa_crescimento(self, imagem_inicio, imagem_fim):
         """
-        Calcula mapa de crescimento comparando duas imagens
+        Calcula mapa visual de crescimento (subtração) entre duas imagens.
+        Cria uma imagem que mostra EXATAMENTE onde a luz cresceu.
         
         Returns:
-            ndarray: Mapa com valores 0-2 (0=nada, 1=amarelo, 2=vermelho)
+            ndarray: Imagem com crescimento realçado (escala de cinza)
         """
         try:
             import numpy as np
             from PIL import Image
+            
+            # Garantir tipos iguais
+            imagem_inicio = imagem_inicio.astype(np.float32)
+            imagem_fim = imagem_fim.astype(np.float32)
             
             # Garantir que as imagens têm o mesmo tamanho
             if imagem_inicio.shape != imagem_fim.shape:
-                logger.warning(f"Imagens com tamanhos diferentes: {imagem_inicio.shape} vs {imagem_fim.shape}")
                 logger.warning(f"Redimensionando segunda imagem para {imagem_inicio.shape}")
-                
-                # Redimensionar a segunda imagem para o tamanho da primeira
-                img_fim_pil = Image.fromarray(imagem_fim.astype(np.uint8) if imagem_fim.max() > 1 else (imagem_fim * 255).astype(np.uint8))
+                img_fim_pil = Image.fromarray(np.uint8(np.clip(imagem_fim, 0, 255)))
                 img_fim_pil = img_fim_pil.resize((imagem_inicio.shape[1], imagem_inicio.shape[0]), Image.Resampling.BILINEAR)
-                imagem_fim = np.array(img_fim_pil).astype(imagem_fim.dtype)
+                imagem_fim = np.array(img_fim_pil).astype(np.float32)
             
-            # Calcular diferença
-            diferenca = imagem_fim - imagem_inicio
+            # Normalizar ambas para 0-1 para comparação justa
+            def normalizar(img):
+                valid = img[(~np.isnan(img)) & (img != 0)]
+                if len(valid) > 0:
+                    vmin, vmax = np.percentile(valid, [1, 99])
+                    if vmax > vmin:
+                        img = (img - vmin) / (vmax - vmin)
+                    else:
+                        img = np.zeros_like(img)
+                return np.clip(img, 0, 1)
             
-            # Inicializar mapa
-            mapa = np.zeros_like(diferenca, dtype=np.uint8)
+            imagem_inicio = normalizar(imagem_inicio)
+            imagem_fim = normalizar(imagem_fim)
             
-            # Filtrar apenas crescimento positivo significativo
-            diff_crescimento = diferenca[~np.isnan(diferenca) & ~np.isinf(diferenca) & (diferenca > 0)]
+            # CALCULAR CRESCIMENTO = última - primeira
+            crescimento = imagem_fim - imagem_inicio
             
-            if len(diff_crescimento) > 0:
-                # Calcular threshold mínimo
-                p50 = np.percentile(diff_crescimento, 50)
-                p75 = np.percentile(diff_crescimento, 75)
-                p90 = np.percentile(diff_crescimento, 90)
-                
-                # Se não há variação (todos os valores são iguais), usar um threshold simples
-                if (p90 - p50) < 0.01:  # Variação muito pequena
-                    # Todos têm crescimento, então marcar como amarelo
-                    mask_amarelo = diferenca >= p50
-                    mapa[mask_amarelo] = 1
-                else:
-                    # Amarelo: crescimento moderado (p50 até p75)
-                    mask_amarelo = (diferenca > p50) & (diferenca <= p75)
-                    mapa[mask_amarelo] = 1
-                    
-                    # Vermelho: crescimento forte (acima de p75)
-                    mask_vermelho = diferenca > p75
-                    mapa[mask_vermelho] = 2
-                
-                logger.debug(f"Crescimento detectado: p50={p50:.2f}, p75={p75:.2f}, p90={p90:.2f}")
-                logger.debug(f"Pixels amarelos: {np.sum(mapa == 1)}, Pixels vermelhos: {np.sum(mapa == 2)}")
+            # Amplificar com power law para visualizar melhor
+            crescimento_pos = np.maximum(crescimento, 0)  # Apenas crescimento positivo
+            crescimento_amplif = np.power(crescimento_pos, 0.5) * 2  # Amplificar
+            crescimento_amplif = np.clip(crescimento_amplif, 0, 1)
             
-            return mapa
+            # Converter para 0-255
+            mapa_crescimento = (crescimento_amplif * 255).astype(np.uint8)
+            
+            logger.info(f"✅ Mapa de crescimento calculado: min={mapa_crescimento.min()}, max={mapa_crescimento.max()}, média={mapa_crescimento[mapa_crescimento>0].mean():.1f}")
+            return mapa_crescimento
             
         except Exception as e:
             logger.error(f"Erro ao calcular mapa de crescimento: {e}")
-            import traceback
-            logger.error(traceback.format_exc())
             return None
-    
-    def _aplicar_overlay_crescimento(self, imagem_cinza, mapa_crescimento):
-        """
-        Aplica overlay de cores (amarelo/vermelho) em uma imagem
-        
-        Args:
-            imagem_cinza: Imagem em escala de cinza (0-255)
-            mapa_crescimento: Mapa de crescimento (0-2)
-            
-        Returns:
-            Imagem RGB com overlay aplicado
-        """
-        try:
-            import numpy as np
-            from PIL import Image
-            from scipy.ndimage import gaussian_filter
-            
-            # Criar imagem RGB duplicando o canal cinza
-            altura, largura = imagem_cinza.shape
-            imagem_rgb = np.stack([imagem_cinza] * 3, axis=2).astype(np.float32)
-            
-            if mapa_crescimento is not None:
-                # Suavizar o mapa de crescimento para evitar artefatos
-                mapa_suave = gaussian_filter(mapa_crescimento.astype(np.float32), sigma=1.5)
-                
-                # Vermelho: FF4444 (aplicar com transparência baseada na intensidade)
-                mask_vermelho = mapa_suave > 1.5
-                intensidade_vermelho = np.clip(mapa_suave[mask_vermelho] - 1.5, 0, 0.5) * 2
-                
-                imagem_rgb[mask_vermelho, 0] = np.clip(
-                    imagem_rgb[mask_vermelho, 0] * (1 - intensidade_vermelho) + 255 * intensidade_vermelho, 
-                    0, 255
-                )
-                imagem_rgb[mask_vermelho, 1] = np.clip(
-                    imagem_rgb[mask_vermelho, 1] * (1 - intensidade_vermelho) + 68 * intensidade_vermelho, 
-                    0, 255
-                )
-                imagem_rgb[mask_vermelho, 2] = np.clip(
-                    imagem_rgb[mask_vermelho, 2] * (1 - intensidade_vermelho) + 68 * intensidade_vermelho, 
-                    0, 255
-                )
-                
-                # Amarelo: FFD700 (aplicar com transparência baseada na intensidade)
-                mask_amarelo = (mapa_suave > 0.5) & (mapa_suave <= 1.5)
-                intensidade_amarelo = np.clip(mapa_suave[mask_amarelo], 0.5, 1.5) / 1.5 * 0.6
-                
-                imagem_rgb[mask_amarelo, 0] = np.clip(
-                    imagem_rgb[mask_amarelo, 0] * (1 - intensidade_amarelo) + 255 * intensidade_amarelo, 
-                    0, 255
-                )
-                imagem_rgb[mask_amarelo, 1] = np.clip(
-                    imagem_rgb[mask_amarelo, 1] * (1 - intensidade_amarelo) + 215 * intensidade_amarelo, 
-                    0, 255
-                )
-                imagem_rgb[mask_amarelo, 2] = np.clip(
-                    imagem_rgb[mask_amarelo, 2] * (1 - intensidade_amarelo) + 0 * intensidade_amarelo, 
-                    0, 255
-                )
-            
-            return imagem_rgb.astype(np.uint8)
-            
-        except Exception as e:
-            logger.error(f"Erro ao aplicar overlay: {e}")
-            return imagem_cinza
-    
-        """
-        Gera pontos de heatmap distribuídos pela cidade baseado em intensidade
-        
-        Returns:
-            list: Pontos no formato [[lat, lon, intensidade], ...]
-        """
-        try:
-            pontos = []
-            lat_centro = dados_cidade['lat']
-            lon_centro = dados_cidade['lon']
-            
-            # Ler e processar dados do CSV
-            import random
-            random.seed(42)  # Para reproducibilidade
-            
-            dados_por_ano = {}
-            with open(arquivo_csv, 'r', encoding='utf-8') as f:
-                leitor = csv.DictReader(f)
-                for linha in leitor:
-                    ano = int(linha.get('ano', 0))
-                    intensidade = float(linha.get('intensidade_media', 0))
-                    if ano not in dados_por_ano:
-                        dados_por_ano[ano] = []
-                    dados_por_ano[ano].append(intensidade)
-            
-            if len(dados_por_ano) < 2:
-                return []
-            
-            anos = sorted(dados_por_ano.keys())
-            ano_inicio = anos[0]
-            ano_final = anos[-1]
-            
-            # Média por período
-            media_inicio = sum(dados_por_ano[ano_inicio]) / len(dados_por_ano[ano_inicio])
-            media_final = sum(dados_por_ano[ano_final]) / len(dados_por_ano[ano_final])
-            
-            # Calcular crescimento e gerar pontos
-            crescimento = (media_final - media_inicio) / media_inicio if media_inicio > 0 else 0
-            crescimento_norm = max(0, min(100, (crescimento + 1) * 50))  # Normalizar 0-100
-            
-            # Gerar pontos distribuídos pela cidade
-            # Pontos com maior intensidade nas áreas com crescimento
-            num_pontos = max(20, int(len(dados_por_ano[ano_final]) / 2))
-            
-            for i in range(num_pontos):
-                # Distribuir pontos aleatoriamente dentro da bounding box da cidade
-                lat_offset = (random.random() - 0.5) * 0.06
-                lon_offset = (random.random() - 0.5) * 0.06
-                
-                # Intensidade varia com o crescimento
-                if crescimento > 0:
-                    # Com crescimento: pontos mais vermelhos
-                    intensidade_ponto = 50 + (crescimento_norm * 0.5)
-                else:
-                    # Sem crescimento: pontos mais amarelos
-                    intensidade_ponto = 40 + abs(crescimento_norm * 0.3)
-                
-                pontos.append([
-                    lat_centro + lat_offset,
-                    lon_centro + lon_offset,
-                    intensidade_ponto
-                ])
-            
-            logger.info(f"✅ {len(pontos)} pontos de heatmap gerados")
-            return pontos
-            
-        except Exception as e:
-            logger.error(f"Erro ao gerar heatmap: {e}")
-            return []
-
-
-def gerar_mapa_crescimento():
-    """Função principal para gerar mapa"""
-    print("🗺️ Gerando Mapa de Crescimento Luminoso...\n")
-    
-    mapa = MapaCrescimento()
-    
-    # Carregar coordenadas
-    if not mapa.carregar_coordenadas():
-        print("❌ Erro ao carregar coordenadas")
-        return False
-    
-    # Processar crescimento
-    print("\n📊 Calculando crescimento das cidades...")
-    mapa.processar_todas_cidades()
-    
-    # Gerar outputs
-    print("\n💾 Gerando arquivos...")
-    mapa.gerar_geojson('mapa_crescimento.geojson')
-    mapa.gerar_relatorio_html('mapa_crescimento.html')
-    
-    print("\n✅ Mapa gerado com sucesso!")
-    print("\n📁 Arquivos gerados:")
-    print("   • mapa_crescimento.html (Mapa interativo com todas as cidades)")
-    print("   • mapa_crescimento.geojson (Dados GeoJSON com crescimento)")
-    
-    return True
-
-
-if __name__ == "__main__":
-    try:
-        sucesso = gerar_mapa_crescimento()
-        if sucesso:
-            print("\n" + "="*60)
-            print("🎉 Análise de Mapa de Crescimento Concluída!")
-            print("="*60)
-        else:
-            print("\n⚠️  Falha ao gerar o mapa")
-            exit(1)
-    except KeyboardInterrupt:
-        print("\n❌ Processo cancelado pelo usuário")
-        exit(0)
-    except Exception as e:
-        logger.error(f"Erro ao executar: {e}")
-        import traceback
-        traceback.print_exc()
-        exit(1)
-
-

@@ -1,0 +1,13 @@
+Usage: python -m flask run [OPTIONS]
+Try 'python -m flask run --help' for help.
+
+Error: While importing 'app.app', an ImportError was raised:
+
+Traceback (most recent call last):
+  File "C:\Users\gtvargas\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\cli.py", line 245, in locate_app
+    __import__(module_name)
+    ~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\gtvargas\Desktop\Algoritmo_de_leitura_de_luz\app.py", line 11, in <module>
+    from leitura_de_luz import AnalisadorLuzSatelite
+ModuleNotFoundError: No module named 'leitura_de_luz'
+
